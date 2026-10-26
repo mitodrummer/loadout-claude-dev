@@ -1,8 +1,8 @@
 #!/bin/sh
 # One-time setup after cloning this loadout into ~/.config/minimal/loadouts*/.
-# Writes your git identity to local/gitconfig and your settings to
-# local/config (both gitignored), and makes the loadout a default for
-# `min session activate`. Safe to re-run; it never overwrites local/.
+# Writes your settings to local/config (gitignored) and makes the loadout a
+# default for `min session activate`. Safe to re-run; it never overwrites
+# local/config.
 set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -15,14 +15,6 @@ case $here in
 esac
 
 mkdir -p "$here/local"
-
-if [ ! -f "$here/local/gitconfig" ]; then
-  user=$(git config user.name 2>/dev/null || true)
-  email=$(git config user.email 2>/dev/null || true)
-  printf '[user]\n\tname = %s\n\temail = %s\n' "${user:-Your Name}" "${email:-you@example.com}" \
-    >"$here/local/gitconfig"
-  echo "wrote local/gitconfig${user:+ from your host git identity}; edit it to commit as someone else"
-fi
 
 if [ ! -f "$here/local/config" ]; then
   cp "$here/config.example" "$here/local/config"

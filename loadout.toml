@@ -14,8 +14,8 @@ patches = [
     { dest = ".local/share/claude-dev/skills/dotfiles/SKILL.md", source = "$LOADOUT_ROOT/skills/dotfiles/SKILL.md", description = "installed by dotfiles-sync when DOTFILES_REPO is set" },
 
     # Written by ./setup and gitignored. A missing source is skipped, so the
-    # loadout activates before setup has run.
-    { dest = ".gitconfig",                    source = "$LOADOUT_ROOT/local/gitconfig",        description = "your git identity" },
+    # loadout activates before setup has run. The git identity comes from
+    # your GitHub account at attach.
     { dest = ".config/claude-dev/config",     source = "$LOADOUT_ROOT/local/config",           description = "your settings (see config.example)" },
 ]
 

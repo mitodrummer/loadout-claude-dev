@@ -20,13 +20,16 @@ git clone https://github.com/mitodrummer/loadout-claude-dev \
 ~/.config/minimal/loadouts-untrusted/claude-dev/setup
 ```
 
-`setup` writes your git identity and settings to `local/` (gitignored), asks
-for your dotfiles repo, and adds the loadout to your `default_loadouts`. Then,
-in any project:
+`setup` writes your settings to `local/config` (gitignored), asks for your
+dotfiles repo, and adds the loadout to your `default_loadouts`. Then, in any
+project:
 
 ```sh
 min session activate --attach
 ```
+
+At attach you sign in to GitHub (skipped when `GH_TOKEN` is set), and commits
+use that account's name and email unless your dotfiles set them.
 
 The loadout copies its own files into the session, passes through the
 variables below, and runs two activation hooks. In `loadouts-untrusted/`,
@@ -75,8 +78,8 @@ resets it. Don't combine this with another loadout that sets `PROMPT_COMMAND`.
 | File | Purpose |
 | --- | --- |
 | `loadout.toml` | Packages, patches, hooks and variables |
-| `setup` | Writes `local/` and adds the loadout to your defaults |
-| `bin/claude-dev-session` | At attach: GitHub sign-in, then the zellij layout |
+| `setup` | Writes `local/config` and adds the loadout to your defaults |
+| `bin/claude-dev-session` | At attach: GitHub sign-in and git identity, then the zellij layout |
 | `bin/claude-launch` | `claude update`, then the newest claude |
 | `bin/dotfiles-sync` | Clones `DOTFILES_REPO` at activation |
 | `skills/dotfiles/` | Claude's instructions for `dgit` |
