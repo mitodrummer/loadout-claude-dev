@@ -17,8 +17,11 @@ if command -v gh >/dev/null 2>&1; then
   if gh auth status >/dev/null 2>&1; then
     :
   elif [ -t 0 ]; then
-    echo "GitHub: not signed in to this session; starting 'gh auth login'." >&2
-    gh auth login --scopes user:email || echo "GitHub: login did not finish; run 'gh auth login' later." >&2
+    echo "GitHub: not signed in to this session. Open https://github.com/login/device and enter the code below." >&2
+    # The session has no browser to open, so GH_BROWSER=true makes gh's
+    # attempt a quiet no-op.
+    GH_BROWSER=true gh auth login --hostname github.com --git-protocol https --web \
+      --scopes user:email || echo "GitHub: login did not finish; run 'gh auth login' later." >&2
   else
     echo "GitHub: not signed in; run 'gh auth login' in the shell pane." >&2
   fi
