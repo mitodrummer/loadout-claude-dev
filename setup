@@ -1,0 +1,46 @@
+#!/bin/sh
+# One-time setup after cloning this loadout into ~/.config/minimal/loadouts*/.
+# Writes your git identity to local/gitconfig and your settings to
+# local/config (both gitignored), and makes the loadout a default for
+# `min session activate`. Safe to re-run; it never overwrites local/.
+set -eu
+
+here=$(cd "$(dirname "$0")" && pwd)
+name=$(basename "$here")
+config=${XDG_CONFIG_HOME:-$HOME/.config}/minimal
+
+case $here in
+  "$config"/loadouts/* | "$config"/loadouts-untrusted/*) ;;
+  *) echo "warning: $here is not under $config/loadouts*/, so min will not find it" >&2 ;;
+esac
+
+mkdir -p "$here/local"
+
+if [ ! -f "$here/local/gitconfig" ]; then
+  user=$(git config user.name 2>/dev/null || true)
+  email=$(git config user.email 2>/dev/null || true)
+  printf '[user]\n\tname = %s\n\temail = %s\n' "${user:-Your Name}" "${email:-you@example.com}" \
+    >"$here/local/gitconfig"
+  echo "wrote local/gitconfig${user:+ from your host git identity}; edit it to commit as someone else"
+fi
+
+if [ ! -f "$here/local/config" ]; then
+  cp "$here/config.example" "$here/local/config"
+  if [ -t 0 ]; then
+    printf 'Dotfiles repo to check out in sessions (owner/name, blank for none): '
+    read -r repo
+    if [ -n "$repo" ]; then
+      printf '\nDOTFILES_REPO=%s\n' "$repo" >>"$here/local/config"
+    fi
+  fi
+  echo "wrote local/config; edit it for the other settings"
+fi
+
+toml=$config/config.toml
+if [ ! -f "$toml" ]; then
+  mkdir -p "$config"
+  printf '[loadouts]\ndefault_loadouts = ["%s"]\n' "$name" >"$toml"
+  echo "wrote $toml"
+elif ! grep -q "\"$name\"" "$toml"; then
+  echo "add \"$name\" to [loadouts] default_loadouts in $toml, or pass --loadout $name"
+fi

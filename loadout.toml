@@ -1,0 +1,46 @@
+description = "Claude Code beside a shell in zellij, vim + fzf, and optional dotfiles from your own git repo"
+
+packages = ["claude-code", "zellij", "vim", "fzf", "ripgrep", "fd", "bat", "git", "gh", "jq"]
+
+# Every source is under this loadout's directory, so it works wherever it is
+# cloned. Patched files land 0644; the first hook below restores the exec bit.
+patches = [
+    { dest = ".local/bin/claude-dev-session", source = "$LOADOUT_ROOT/bin/claude-dev-session", description = "attach: GitHub login, then the zellij layout" },
+    { dest = ".local/bin/claude-launch",      source = "$LOADOUT_ROOT/bin/claude-launch",      description = "agent pane: claude update, then the newest claude" },
+    { dest = ".local/bin/dotfiles-sync",      source = "$LOADOUT_ROOT/bin/dotfiles-sync",      description = "clones DOTFILES_REPO into the session home" },
+    { dest = ".bashrc",                       source = "$LOADOUT_ROOT/home/bashrc",            description = "shell pane: fzf bindings and aliases" },
+    { dest = ".vimrc",                        source = "$LOADOUT_ROOT/home/vimrc",             description = "vim defaults and fzf pickers" },
+    { dest = ".vim/plugin/fzf.vim",           source = "$LOADOUT_ROOT/home/fzf.vim",           description = "fzf's vim plugin (MIT, junegunn/fzf)" },
+    { dest = ".local/share/claude-dev/skills/dotfiles/SKILL.md", source = "$LOADOUT_ROOT/skills/dotfiles/SKILL.md", description = "installed by dotfiles-sync when DOTFILES_REPO is set" },
+
+    # Written by ./setup and gitignored. A missing source is skipped, so the
+    # loadout activates before setup has run.
+    { dest = ".gitconfig",                    source = "$LOADOUT_ROOT/local/gitconfig",        description = "your git identity" },
+    { dest = ".config/claude-dev/config",     source = "$LOADOUT_ROOT/local/config",           description = "your settings (see config.example)" },
+]
+
+[[lifecycle_hooks]]
+description = "Make the patched scripts executable and skip Claude Code's first-run onboarding"
+on_activate = { type = "inline", value = '''chmod +x "$HOME"/.local/bin/claude-dev-session "$HOME"/.local/bin/claude-launch "$HOME"/.local/bin/dotfiles-sync 2>/dev/null; [ -f "$HOME/.claude.json" ] || printf '{"hasCompletedOnboarding": true}\n' > "$HOME/.claude.json"''' }
+
+# Does nothing unless DOTFILES_REPO is set. The script caps its own clone at
+# 60s, and a timed-out on_activate fails the whole activation, hence the
+# headroom and the `|| true`.
+[[lifecycle_hooks]]
+description = "Clone your dotfiles repo (DOTFILES_REPO) into the session home"
+on_activate = { type = "inline", value = 'bash "$HOME/.local/bin/dotfiles-sync" || true', timeout = 90 }
+
+[vars]
+# The attach shell reads no rc files, so the layout starts from the first
+# prompt instead. Skipped inside a multiplexer, so panes don't nest it.
+PROMPT_COMMAND = 'unset PROMPT_COMMAND; [ -z "${ZELLIJ:-}${TMUX:-}${STY:-}" ] && bash "$HOME/.local/bin/claude-dev-session"'
+
+# Each is taken from your host shell when set and dropped otherwise.
+GH_TOKEN                = { inherit = true }
+CLAUDE_CODE_OAUTH_TOKEN = { inherit = true }
+ANTHROPIC_API_KEY       = { inherit = true }
+TERM                    = { inherit = true, default = "xterm-256color" }
+COLORTERM               = { inherit = true }
+
+EDITOR = "vim"
+VISUAL = "vim"

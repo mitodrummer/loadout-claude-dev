@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Clones DOTFILES_REPO into the session home as a dotfiles repo: the git dir
+# at ~/$DOTFILES_DIR, the work tree at $HOME, so tracked files land where they
+# belong and `dgit` commits and pushes them. Settings come from
+# ~/.config/claude-dev/config (see config.example).
+#
+# Run by the loadout's on_activate hook, which has no TTY and a time limit, so
+# every failure is a warning and the clone is capped. Re-running it in a
+# session that already has the repo does nothing; use `dgit pull` there.
+set -uo pipefail
+
+if [ -z "${MINIMAL_SESSION_NAME:-}" ]; then
+  echo "dotfiles-sync: not inside a Minimal session; refusing to check out over \$HOME." >&2
+  exit 1
+fi
+
+# shellcheck source=/dev/null
+[ -f "$HOME/.config/claude-dev/config" ] && . "$HOME/.config/claude-dev/config"
+[ -n "${DOTFILES_REPO:-}" ] || exit 0
+
+git_dir="$HOME/${DOTFILES_DIR:-.dotfiles}"
+if [ -e "$git_dir" ]; then
+  echo "dotfiles-sync: $git_dir already exists; run 'dgit pull' to update it." >&2
+  exit 0
+fi
+
+case "$DOTFILES_REPO" in
+  *://* | git@*) url="$DOTFILES_REPO" ;;
+  *) url="https://github.com/$DOTFILES_REPO.git" ;;
+esac
+
+dgit() { git --git-dir="$git_dir" --work-tree="$HOME" "$@"; }
+
+# gh supplies GH_TOKEN for private repos. The empty helper first drops any
+# helper configured more widely, so gh is the only one asked.
+cred=()
+command -v gh >/dev/null 2>&1 &&
+  cred=(-c credential.helper= -c 'credential.helper=!gh auth git-credential')
+
+# --separate-git-dir gives a normal clone (remote-tracking branches, an
+# upstream for `dgit pull`) whose git dir sits outside the work tree.
+# --no-checkout because the work tree is $HOME, not the scratch directory.
+scratch="$(mktemp -d)"
+clone=(git "${cred[@]}" -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=15
+  clone --quiet --no-checkout --separate-git-dir="$git_dir")
+[ -n "${DOTFILES_REF:-}" ] && clone+=(--branch "$DOTFILES_REF")
+command -v timeout >/dev/null 2>&1 && clone=(timeout 60 "${clone[@]}")
+if ! GIT_TERMINAL_PROMPT=0 "${clone[@]}" "$url" "$scratch/repo"; then
+  echo "dotfiles-sync: could not clone $url; continuing without dotfiles." >&2
+  rm -rf "$scratch" "$git_dir"
+  exit 0
+fi
+rm -rf "$scratch"
+
+[ ${#cred[@]} -gt 0 ] && dgit config credential.helper '!gh auth git-credential'
+# Without this, `dgit status` lists every untracked file in $HOME.
+dgit config status.showUntrackedFiles no
+
+if [ -n "${DOTFILES_PATHS:-}" ]; then
+  # shellcheck disable=SC2086 # the patterns are space-separated on purpose
+  dgit sparse-checkout set --no-cone $DOTFILES_PATHS ||
+    echo "dotfiles-sync: sparse-checkout failed; checking out everything." >&2
+fi
+
+# --force: the repo's files replace what the loadout patched in (a tracked
+# .vimrc wins over the loadout's), which is the point of bringing your own.
+if ! dgit checkout --force --quiet; then
+  echo "dotfiles-sync: checkout failed; dotfiles may be incomplete." >&2
+fi
+
+skill="$HOME/.local/share/claude-dev/skills/dotfiles"
+if [ -f "$skill/SKILL.md" ] && [ ! -e "$HOME/.claude/skills/dotfiles" ]; then
+  mkdir -p "$HOME/.claude/skills"
+  cp -R "$skill" "$HOME/.claude/skills/dotfiles"
+fi
+
+# The shell pane sources ~/.bashrc. Appended after the checkout so a tracked
+# .bashrc keeps the alias.
+alias_line="alias dgit='git --git-dir=\"$git_dir\" --work-tree=\"\$HOME\"'"
+grep -qF "$alias_line" "$HOME/.bashrc" 2>/dev/null ||
+  printf '\n# claude-dev: your dotfiles repo (%s)\n%s\n' "$DOTFILES_REPO" "$alias_line" >>"$HOME/.bashrc"
+
+echo "dotfiles-sync: checked out $DOTFILES_REPO at $(dgit rev-parse --short HEAD)."

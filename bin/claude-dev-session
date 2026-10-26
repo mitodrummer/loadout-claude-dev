@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Runs at the first prompt of `min session attach` (the loadout's
+# PROMPT_COMMAND): signs in to GitHub, then opens the zellij layout with
+# Claude Code on the left and a shell on the right.
+#
+# It runs at attach rather than from a lifecycle hook because `gh auth login`
+# and zellij need the terminal, which hooks don't have.
+#
+# Not `set -e`: a failed nicety must still leave a working shell.
+set -uo pipefail
+
+# shellcheck source=/dev/null
+[ -f "$HOME/.config/claude-dev/config" ] && . "$HOME/.config/claude-dev/config"
+
+# git over HTTPS through gh, since the sandbox has no SSH keys.
+if command -v gh >/dev/null 2>&1; then
+  if gh auth status >/dev/null 2>&1; then
+    :
+  elif [ -t 0 ]; then
+    echo "GitHub: not signed in to this session; starting 'gh auth login'." >&2
+    gh auth login || echo "GitHub: login did not finish; run 'gh auth login' later." >&2
+  else
+    echo "GitHub: not signed in; run 'gh auth login' in the shell pane." >&2
+  fi
+  # setup-git writes to ~/.gitconfig only when the file exists, and to
+  # ~/.config/git/config (often a tracked dotfile) otherwise.
+  touch "$HOME/.gitconfig"
+  gh auth setup-git 2>/dev/null || true
+fi
+
+origin_url="$(git remote get-url origin 2>/dev/null || true)"
+case "$origin_url" in
+  git@github.com:*) git remote set-url origin "https://github.com/${origin_url#git@github.com:}" ;;
+esac
+
+command -v zellij >/dev/null 2>&1 || exit 0
+
+# zellij shows a setup wizard whenever its config file is missing, and every
+# session starts with a fresh home. Dotfiles that track the config win.
+zj_config="${XDG_CONFIG_HOME:-$HOME/.config}/zellij/config.kdl"
+if [ ! -f "$zj_config" ]; then
+  mkdir -p "${zj_config%/*}"
+  zellij setup --dump-config >"$zj_config" 2>/dev/null || rm -f "$zj_config"
+fi
+
+rcfile="$HOME/.bashrc"
+[ -n "${SHELL_RCFILE:-}" ] && [ -f "$SHELL_RCFILE" ] && rcfile="$PWD/$SHELL_RCFILE"
+
+# KDL strings: escape backslashes and quotes.
+kdl() { local s=${1//\\/\\\\}; printf '"%s"' "${s//\"/\\\"}"; }
+
+agent_args=""
+read -ra extra <<<"${CLAUDE_ARGS:-}"
+for arg in ${extra[@]+"${extra[@]}"}; do agent_args+=" $(kdl "$arg")"; done
+agent_pane='pane focus=true name="claude" command="claude-launch"'
+[ -n "$agent_args" ] && agent_pane+=" {
+            args$agent_args
+        }"
+
+layout=$(cat <<EOF
+layout {
+    pane split_direction="vertical" {
+        $agent_pane
+        pane name="shell" command="bash" {
+            args "--rcfile" $(kdl "$rcfile") "-i"
+        }
+    }
+}
+EOF
+)
+
+# Attaching again rejoins the running layout instead of replacing it.
+# `zellij delete-session --force claude-dev` starts over.
+zellij --layout-string "$layout" attach --create claude-dev \
+  options --show-startup-tips false --show-release-notes false

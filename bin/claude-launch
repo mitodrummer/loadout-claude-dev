@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Agent-pane launcher: `claude update`, then exec the newest Claude Code.
+# Arguments pass through to claude.
+#
+# In a session, `claude` is the claude-code package's /usr/bin wrapper, which
+# runs its pinned version. `claude update` installs to ~/.local/bin/claude,
+# which comes later on PATH, so the update only takes effect if something
+# runs that copy directly.
+#
+# Not `set -e`: a failed update (offline, rate limit) still launches the
+# installed version.
+set -uo pipefail
+
+updated="$HOME/.local/bin/claude"
+
+# Update through the updated copy when there is one: the package wrapper
+# compares its own pinned version, so it would download again every launch.
+updater="$updated"
+[ -x "$updater" ] || updater=claude
+"$updater" update >/dev/null 2>&1 ||
+  echo "claude-launch: 'claude update' failed; starting the installed version." >&2
+
+if [ -x "$updated" ]; then
+  # Same launch environment as the package wrapper: Minimal's session plugin
+  # and the packaged ripgrep.
+  plugin=/usr/share/claude/plugins/minimal
+  if [ -z "${MINIMAL_CLAUDE_NO_PLUGIN:-}" ] && [ -d "$plugin" ]; then
+    set -- "--plugin-dir=$plugin" "$@"
+  fi
+  DISABLE_AUTOUPDATER=1 USE_BUILTIN_RIPGREP=0 exec "$updated" "$@"
+fi
+
+exec claude "$@"

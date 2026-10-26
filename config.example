@@ -1,0 +1,26 @@
+# claude-dev settings. ./setup copies this to local/config, which the loadout
+# patches into the session as ~/.config/claude-dev/config. It is sourced by
+# bash, so quote values with spaces. Every setting is optional.
+
+# Dotfiles: a git repo whose tracked files are checked out into the session
+# home at activation, at the newest commit on GitHub. owner/name or a full
+# clone URL. Private repos authenticate with GH_TOKEN.
+#DOTFILES_REPO=you/dotfiles
+
+# Where the repo's git dir lives in the session home (the work tree is $HOME).
+# `dgit` in the shell is git against it.
+#DOTFILES_DIR=.dotfiles
+
+# Branch to check out. Default: the repo's default branch.
+#DOTFILES_REF=main
+
+# Only check out these paths (git sparse-checkout patterns, space-separated).
+# Default: everything the repo tracks.
+#DOTFILES_PATHS="/.vimrc /.config/git/ /.claude/settings.json /.claude/skills/"
+
+# Extra arguments for claude in the agent pane.
+#CLAUDE_ARGS="--permission-mode auto"
+
+# The shell pane's rcfile, relative to the project root. Used when the file
+# exists; otherwise ~/.bashrc.
+#SHELL_RCFILE=scripts/dev-bashrc.sh
