@@ -20,6 +20,17 @@ updater="$updated"
 "$updater" update >/dev/null 2>&1 ||
   echo "claude-launch: 'claude update' failed; starting the installed version." >&2
 
+claude_bin=claude
+[ -x "$updated" ] && claude_bin="$updated"
+
+# Sign in before Claude starts, so the first thing it shows is a prompt
+# rather than a login screen. Skipped when a token is inherited.
+if [ -t 0 ] && ! "$claude_bin" auth status >/dev/null 2>&1; then
+  echo "Sign in to Claude: a browser link and code follow." >&2
+  "$claude_bin" auth login ||
+    echo "claude-launch: sign-in did not finish; use /login inside Claude." >&2
+fi
+
 if [ -x "$updated" ]; then
   # Same launch environment as the package wrapper: Minimal's session plugin
   # and the packaged ripgrep.
