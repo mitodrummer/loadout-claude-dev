@@ -29,7 +29,8 @@ min session activate --attach
 ```
 
 At attach you sign in to GitHub (skipped when `GH_TOKEN` is set), and commits
-use that account's name and email unless your dotfiles set them.
+use that account's name and email unless your dotfiles or `GIT_USER_*` set
+them.
 
 The loadout copies its own files into the session, passes through the
 variables below, and runs two activation hooks. In `loadouts-untrusted/`,
@@ -48,6 +49,7 @@ Minimal asks you to approve those the first time. Read them first:
 | `DOTFILES_PATHS` | everything | Sparse-checkout patterns, space-separated. |
 | `CLAUDE_ARGS` | none | Extra arguments for claude. |
 | `SHELL_RCFILE` | `~/.bashrc` | The shell pane's rcfile, relative to the project. |
+| `GIT_USER_NAME`, `GIT_USER_EMAIL` | dotfiles, else GitHub | Your git identity for commits. |
 
 From your host shell, each optional: `GH_TOKEN` (GitHub, and private dotfiles
 repos; otherwise you sign in at attach), `CLAUDE_CODE_OAUTH_TOKEN` or

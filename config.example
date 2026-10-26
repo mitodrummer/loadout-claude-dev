@@ -24,3 +24,8 @@
 # The shell pane's rcfile, relative to the project root. Used when the file
 # exists; otherwise ~/.bashrc.
 #SHELL_RCFILE=scripts/dev-bashrc.sh
+
+# Your git identity for commits. Each one left unset comes from your
+# dotfiles, or else from the GitHub account you sign in with.
+#GIT_USER_NAME="Your Name"
+#GIT_USER_EMAIL=you@example.com

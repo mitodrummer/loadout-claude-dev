@@ -28,20 +28,25 @@ if command -v gh >/dev/null 2>&1; then
   gh auth setup-git 2>/dev/null || true
 fi
 
-# Commit as the GitHub account just signed in, unless dotfiles already set an
-# identity. The email is the account's primary one when gh's token can read
-# it, then its public one, then GitHub's noreply address, which still links
-# commits to the account.
-if gh auth status >/dev/null 2>&1 && [ -z "$(git config --global user.email)" ]; then
+# Git identity: GIT_USER_NAME / GIT_USER_EMAIL from the config win. A value
+# left unset keeps what dotfiles set, and otherwise comes from the GitHub
+# account just signed in: its name (or login), and its primary email when
+# gh's token can read it, then its public one, then GitHub's noreply address,
+# which still links commits to the account.
+git_name="${GIT_USER_NAME:-$(git config --global user.name)}"
+git_email="${GIT_USER_EMAIL:-$(git config --global user.email)}"
+if { [ -z "$git_name" ] || [ -z "$git_email" ]; } && gh auth status >/dev/null 2>&1; then
   IFS=$'\t' read -r gh_login gh_id gh_name gh_email < <(
     gh api user --jq '[.login, .id, (.name // ""), (.email // "")] | @tsv' 2>/dev/null)
   if [ -n "${gh_login:-}" ]; then
     primary="$(gh api user/emails --jq 'map(select(.primary))[0].email // empty' 2>/dev/null)" ||
       primary=""
-    git config --global user.name "${gh_name:-$gh_login}"
-    git config --global user.email "${primary:-${gh_email:-$gh_id+$gh_login@users.noreply.github.com}}"
+    git_name="${git_name:-${gh_name:-$gh_login}}"
+    git_email="${git_email:-${primary:-${gh_email:-$gh_id+$gh_login@users.noreply.github.com}}}"
   fi
 fi
+[ -n "$git_name" ] && git config --global user.name "$git_name"
+[ -n "$git_email" ] && git config --global user.email "$git_email"
 
 # Claude Code asks whether to trust every folder it hasn't seen, and each
 # session's project folder is new. Activating the project is that decision.
