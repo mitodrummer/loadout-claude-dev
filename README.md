@@ -1,9 +1,9 @@
 # loadout-claude-dev
 
 A [Minimal](https://minimal.dev) loadout for coding with Claude Code. Attach
-to a session and you get a zellij layout: Claude Code on the left (updated to
-the newest release on every start), a shell on the right. Vim, fzf, ripgrep,
-fd and bat come with it.
+to a session and you get a zellij layout: Claude Code on the left, a shell on
+the right. Vim, fzf, ripgrep, fd and bat come with it. Claude Code is the
+version Minimal's catalog pins, like every other package in the session.
 
 Bring your own dotfiles: point it at a git repo and every session starts with
 your config checked out at the newest commit, and a `dgit` command to commit
@@ -82,7 +82,6 @@ resets it. Don't combine this with another loadout that sets `PROMPT_COMMAND`.
 | `loadout.toml` | Packages, patches, hooks and variables |
 | `setup` | Writes `local/config` and adds the loadout to your defaults |
 | `bin/claude-dev-session` | At attach: GitHub sign-in and git identity, then the zellij layout |
-| `bin/claude-launch` | `claude update`, then the newest claude |
 | `bin/dotfiles-sync` | Clones `DOTFILES_REPO` at activation |
 | `skills/dotfiles/` | Claude's instructions for `dgit` |
 | `home/` | `.bashrc`, `.vimrc`, and fzf's vim plugin (MIT, junegunn/fzf) |

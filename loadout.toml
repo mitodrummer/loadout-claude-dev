@@ -6,7 +6,6 @@ packages = ["claude-code", "zellij", "vim", "fzf", "ripgrep", "fd", "bat", "git"
 # cloned. Patched files land 0644; the first hook below restores the exec bit.
 patches = [
     { dest = ".local/bin/claude-dev-session", source = "$LOADOUT_ROOT/bin/claude-dev-session", description = "attach: GitHub login, then the zellij layout" },
-    { dest = ".local/bin/claude-launch",      source = "$LOADOUT_ROOT/bin/claude-launch",      description = "agent pane: claude update, then the newest claude" },
     { dest = ".local/bin/dotfiles-sync",      source = "$LOADOUT_ROOT/bin/dotfiles-sync",      description = "clones DOTFILES_REPO into the session home" },
     { dest = ".bashrc",                       source = "$LOADOUT_ROOT/home/bashrc",            description = "shell pane: fzf bindings and aliases" },
     { dest = ".vimrc",                        source = "$LOADOUT_ROOT/home/vimrc",             description = "vim defaults and fzf pickers" },
@@ -21,7 +20,7 @@ patches = [
 
 [[lifecycle_hooks]]
 description = "Make the patched scripts executable and skip Claude Code's first-run onboarding"
-on_activate = { type = "inline", value = '''chmod +x "$HOME"/.local/bin/claude-dev-session "$HOME"/.local/bin/claude-launch "$HOME"/.local/bin/dotfiles-sync 2>/dev/null; [ -f "$HOME/.claude.json" ] || printf '{"hasCompletedOnboarding": true}\n' > "$HOME/.claude.json"''' }
+on_activate = { type = "inline", value = '''chmod +x "$HOME"/.local/bin/claude-dev-session "$HOME"/.local/bin/dotfiles-sync 2>/dev/null; [ -f "$HOME/.claude.json" ] || printf '{"hasCompletedOnboarding": true}\n' > "$HOME/.claude.json"''' }
 
 # Does nothing unless DOTFILES_REPO is set. The script caps its own clone at
 # 60s, and a timed-out on_activate fails the whole activation, hence the

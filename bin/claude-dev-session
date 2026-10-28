@@ -84,7 +84,7 @@ kdl() { local s=${1//\\/\\\\}; printf '"%s"' "${s//\"/\\\"}"; }
 agent_args=""
 read -ra extra <<<"${CLAUDE_ARGS:-}"
 for arg in ${extra[@]+"${extra[@]}"}; do agent_args+=" $(kdl "$arg")"; done
-agent_pane='pane focus=true name="claude" command="claude-launch"'
+agent_pane='pane focus=true name="claude" command="claude"'
 [ -n "$agent_args" ] && agent_pane+=" {
             args$agent_args
         }"
