@@ -16,8 +16,8 @@ Needs min 0.6.0 or later (`min --version`).
 
 ```sh
 git clone https://github.com/mitodrummer/loadout-claude-dev \
-  ~/.config/minimal/loadouts-untrusted/claude-dev
-~/.config/minimal/loadouts-untrusted/claude-dev/setup
+  ~/.config/minimal/loadouts/claude-dev
+~/.config/minimal/loadouts/claude-dev/setup
 ```
 
 `setup` writes your settings to `local/config` (gitignored), asks for your
@@ -32,10 +32,10 @@ At attach you sign in to GitHub (skipped when `GH_TOKEN` is set), and commits
 use that account's name and email unless your dotfiles or `GIT_USER_*` set
 them.
 
-The loadout copies its own files into the session, passes through the
-variables below, and runs two activation hooks. In `loadouts-untrusted/`,
-Minimal asks you to approve those the first time. Read them first:
-`loadout.toml` and `bin/` are short.
+The directory name is the loadout's name, so keep the clone target. The
+loadout copies its own files into the session, passes through the variables
+below, and runs two activation hooks; read `loadout.toml` and `bin/` before
+installing, they're short.
 
 ## Settings
 
