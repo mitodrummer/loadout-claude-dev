@@ -1,5 +1,5 @@
 #!/bin/sh
-# One-time setup after cloning this loadout into ~/.config/minimal/loadouts*/.
+# One-time setup after cloning this loadout into ~/.config/minimal/loadouts/.
 # Writes your settings to local/config (gitignored) and makes the loadout a
 # default for `min session activate`. Safe to re-run; it never overwrites
 # local/config.
@@ -10,8 +10,8 @@ name=$(basename "$here")
 config=${XDG_CONFIG_HOME:-$HOME/.config}/minimal
 
 case $here in
-  "$config"/loadouts/* | "$config"/loadouts-untrusted/*) ;;
-  *) echo "warning: $here is not under $config/loadouts*/, so min will not find it" >&2 ;;
+  "$config"/loadouts/*) ;;
+  *) echo "warning: $here is not under $config/loadouts/, so min will not find it" >&2 ;;
 esac
 
 mkdir -p "$here/local"
